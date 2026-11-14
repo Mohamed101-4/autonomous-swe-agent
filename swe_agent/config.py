@@ -14,6 +14,7 @@ DEFAULT_MODEL = "claude-opus-5-5"
 class Settings:
     anthropic_api_key: str | None
     model: str
+    effort: str
     database_url: str | None
     sandbox_image: str
     sandbox_timeout_seconds: int
@@ -36,6 +37,7 @@ def load_settings(env: dict[str, str] | None = None, use_dotenv: bool = True) ->
     return Settings(
         anthropic_api_key=env.get("ANTHROPIC_API_KEY") or None,
         model=env.get("ANTHROPIC_MODEL") or DEFAULT_MODEL,
+        effort=env.get("ANTHROPIC_EFFORT") or "medium",
         database_url=env.get("DATABASE_URL") or None,
         sandbox_image=env.get("SANDBOX_IMAGE") or "python:3.12-slim",
         sandbox_timeout_seconds=int(env.get("SANDBOX_TIMEOUT_SECONDS") or 120),
