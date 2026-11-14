@@ -28,7 +28,8 @@ def test_test_files_are_flagged():
 
 
 def test_decorators_and_syntax_errors(tmp_path):
-    (tmp_path / "mod.py").write_text("import functools\n\n@functools.cache\ndef f():\n    return 1\n")
+    code = "import functools\n\n@functools.cache\ndef f():\n    return 1\n"
+    (tmp_path / "mod.py").write_text(code)
     (tmp_path / "broken.py").write_text("def oops(:\n")
     (f,) = index_file(tmp_path, tmp_path / "mod.py")
     assert f.start_line == 3 and f.source.startswith("@functools.cache")
