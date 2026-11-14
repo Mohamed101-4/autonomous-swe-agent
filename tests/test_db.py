@@ -1,6 +1,7 @@
 """Postgres tests. Skipped unless a database is reachable.
 
-Uses TEST_DATABASE_URL, else the docker-compose default (docker compose up -d db).
+Uses TEST_DATABASE_URL, else a separate `swe_agent_test` database on the
+docker-compose server (docker compose up -d db), created on first use.
 """
 
 import os
@@ -11,9 +12,8 @@ import pytest
 from swe_agent.db import init_db, list_runs, record_run
 from swe_agent.pipeline import RunResult
 
-URL = os.environ.get(
-    "TEST_DATABASE_URL", "postgresql://swe_agent:swe_agent@localhost:5433/swe_agent"
-)
+SERVER_URL = "postgresql://swe_agent:swe_agent@localhost:5433/swe_agent"
+URL = os.environ.get("TEST_DATABASE_URL", SERVER_URL.rsplit("/", 1)[0] + "/swe_agent_test")
 
 
 def _reachable() -> bool:
@@ -21,6 +21,14 @@ def _reachable() -> bool:
         psycopg.connect(URL, connect_timeout=2).close()
         return True
     except psycopg.OperationalError:
+        pass
+    if "TEST_DATABASE_URL" in os.environ:
+        return False
+    try:  # create the test database on the compose server
+        with psycopg.connect(SERVER_URL, connect_timeout=2, autocommit=True) as conn:
+            conn.execute("CREATE DATABASE swe_agent_test")
+        return True
+    except psycopg.Error:
         return False
 
 
