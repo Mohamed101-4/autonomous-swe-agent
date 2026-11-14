@@ -18,3 +18,6 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 
 CREATE INDEX IF NOT EXISTS runs_repo_id_idx ON runs (repo_id);
+
+-- Added in Phase 5: token usage per run (for cost reporting).
+ALTER TABLE runs ADD COLUMN IF NOT EXISTS llm_usage JSONB;
