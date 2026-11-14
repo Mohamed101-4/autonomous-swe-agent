@@ -82,6 +82,7 @@ def run_agent(
     embedder: Embedder | None = None,
     options: RunOptions | None = None,
     workspace_root: Path | str = DEFAULT_WORKSPACE_ROOT,
+    test_targets: list[str] | None = None,
 ) -> RunResult:
     settings = settings or load_settings()
     options = options or RunOptions()
@@ -107,6 +108,7 @@ def run_agent(
             "repo_path": str(Path(repo).resolve()),
             "workspace_path": str(workspace.resolve()),
             "attempts": 0,
+            "test_targets": test_targets,
             "log": [],
         },
         {"recursion_limit": 50},

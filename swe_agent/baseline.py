@@ -61,6 +61,7 @@ def run_baseline(
     sandbox: str = "docker",
     workspace_root: Path | str = DEFAULT_WORKSPACE_ROOT,
     max_context_chars: int = 60_000,
+    test_targets: list[str] | None = None,
 ) -> RunResult:
     settings = settings or load_settings()
     llm = llm or AnthropicLLM(settings)
@@ -75,6 +76,7 @@ def run_baseline(
         "workspace_path": str(workspace.resolve()),
         "candidates": candidates,
         "attempts": 0,
+        "test_targets": test_targets,
         "log": [f"baseline: gave the model {len(candidates)} whole file(s)"],
     }
     state |= Patcher(llm)(state)
