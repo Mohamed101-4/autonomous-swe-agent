@@ -24,7 +24,7 @@ from swe_agent.pipeline import (
 from swe_agent.retrieval import BM25, tokenize
 from swe_agent.test_runner import TestRunner
 
-TEST_DIRS = {"tests", "test"}
+TEST_DIRS = {"tests", "test", "testing"}
 
 
 def select_files(repo: Path, issue: str, max_chars: int) -> list[dict]:
