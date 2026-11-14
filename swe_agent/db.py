@@ -33,7 +33,7 @@ def record_run(
     result: RunResult,
     *,
     repo_id: str | None = None,
-    mode: str = "multi_agent",
+    mode: str | None = None,
     options: dict[str, Any] | None = None,
 ) -> int:
     """Insert one run and return its id."""
@@ -43,14 +43,14 @@ def record_run(
             """
             INSERT INTO runs (repo_id, bug_description, mode, status, attempts,
                               tests_passed, tests_failed, test_results, execution_time_s,
-                              relevant_files, patch_diff, agent_log, options)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                              relevant_files, patch_diff, agent_log, options, llm_usage)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
                 repo_id or repo_id_for(result.repo),
                 result.issue,
-                mode,
+                mode or result.mode,
                 result.status,
                 result.attempts,
                 tests.get("passed"),
@@ -61,6 +61,7 @@ def record_run(
                 result.diff or None,
                 Jsonb(result.log),
                 Jsonb(options or {}),
+                Jsonb(result.llm_usage or {}),
             ),
         ).fetchone()
     return row["id"]
