@@ -28,12 +28,12 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # examples/ holds deliberately buggy code whose tests are meant to fail.
-norecursedirs = ["examples", ".venv", ".workspaces"]
+norecursedirs = ["examples", "eval", ".venv", ".workspaces"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["examples"]
+extend-exclude = ["examples", "eval/bugs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

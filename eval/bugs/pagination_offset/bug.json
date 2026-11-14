@@ -1,0 +1,11 @@
+{
+  "id": "pagination_offset",
+  "issue": "Page 1 of the search results skips the first items; pages are supposed to start at 1.",
+  "reference_edits": [
+    {
+      "path": "search/paging.py",
+      "search": "    start = page * per_page",
+      "replace": "    start = (page - 1) * per_page"
+    }
+  ]
+}

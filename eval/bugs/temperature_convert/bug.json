@@ -1,0 +1,11 @@
+{
+  "id": "temperature_convert",
+  "issue": "Fahrenheit to Celsius conversion is wrong: 212F should be 100C but the weather report shows 324C.",
+  "reference_edits": [
+    {
+      "path": "weather/units.py",
+      "search": "    return (fahrenheit - 32) * 9 / 5",
+      "replace": "    return (fahrenheit - 32) * 5 / 9"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "csv_quoted_comma",
+  "issue": "Importing contacts from CSV breaks when a field contains a comma inside double quotes, e.g. \"Smith, Jane\".",
+  "reference_edits": [
+    {
+      "path": "contacts/importer.py",
+      "search": "    lines = [line for line in text.strip().splitlines() if line.strip()]\n    header = lines[0].split(\",\")\n    return [dict(zip(header, line.split(\",\"))) for line in lines[1:]]",
+      "replace": "    import csv\n    import io\n\n    rows = [r for r in csv.reader(io.StringIO(text.strip())) if r]\n    header = rows[0]\n    return [dict(zip(header, r)) for r in rows[1:]]"
+    }
+  ]
+}
