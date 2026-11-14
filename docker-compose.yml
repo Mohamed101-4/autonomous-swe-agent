@@ -1,0 +1,23 @@
+# Local PostgreSQL for storing agent runs.
+# Start:  docker compose up -d db
+# Stop:   docker compose down        (add -v to also delete the data)
+services:
+  db:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_USER: swe_agent
+      POSTGRES_PASSWORD: swe_agent  # local development only
+      POSTGRES_DB: swe_agent
+    ports:
+      - "127.0.0.1:5433:5432"  # 5433 on the host to avoid clashing with other Postgres installs
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swe_agent"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:
