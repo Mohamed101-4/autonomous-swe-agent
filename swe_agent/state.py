@@ -16,6 +16,7 @@ class AgentState(TypedDict, total=False):
     diff: str
     original_files: dict[str, str]  # file contents before any patch, for resets
     patch_error: str | None
+    test_targets: list[str] | None  # pytest node ids for the verifier (None = all tests)
     test_result: dict[str, Any]
     feedback: str | None  # verifier feedback for the next patch attempt
     attempts: int

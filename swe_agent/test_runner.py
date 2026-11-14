@@ -57,8 +57,13 @@ def parse_pytest_output(output: str, exit_code: int, duration_s: float) -> TestR
     )
 
 
+PYTEST_ARGS = ["-q", "-rfE", "-p", "no:cacheprovider"]
+
+
 class TestRunner(Protocol):
-    def run(self, workspace: Path) -> TestRun: ...
+    def run(self, workspace: Path, tests: list[str] | None = None) -> TestRun:
+        """Run all tests, or only the given pytest node ids."""
+        ...
 
 
 class LocalPytestRunner:
@@ -67,8 +72,8 @@ class LocalPytestRunner:
     def __init__(self, timeout_s: int = 120) -> None:
         self.timeout_s = timeout_s
 
-    def run(self, workspace: Path) -> TestRun:
-        cmd = [sys.executable, "-m", "pytest", "-q", "-rfE", "-p", "no:cacheprovider"]
+    def run(self, workspace: Path, tests: list[str] | None = None) -> TestRun:
+        cmd = [sys.executable, "-m", "pytest", *PYTEST_ARGS, *(tests or [])]
         start = time.monotonic()
         try:
             proc = subprocess.run(
@@ -94,17 +99,22 @@ def docker_available() -> bool:
         return False
 
 
-def ensure_sandbox_image(image: str) -> None:
-    """Build the sandbox image from docker/sandbox.Dockerfile if it is not present."""
+def ensure_sandbox_image(
+    image: str, dockerfile: Path = SANDBOX_DOCKERFILE, build_args: dict[str, str] | None = None
+) -> None:
+    """Build `image` from `dockerfile` if it is not present (needs network once)."""
     found = subprocess.run(["docker", "image", "inspect", image], capture_output=True)
     if found.returncode == 0:
         return
-    subprocess.run(
-        ["docker", "build", "-q", "-t", image, "-f", str(SANDBOX_DOCKERFILE), "."],
-        cwd=SANDBOX_DOCKERFILE.parent,
-        check=True,
+    args = [f"--build-arg={k}={v}" for k, v in (build_args or {}).items()]
+    proc = subprocess.run(
+        ["docker", "build", "-q", "-t", image, "-f", str(dockerfile), *args, "."],
+        cwd=dockerfile.parent,
         capture_output=True,
+        text=True,
     )
+    if proc.returncode != 0:
+        raise RuntimeError(f"docker build failed for {image}:\n{proc.stderr[-2000:]}")
 
 
 class DockerPytestRunner:
@@ -123,11 +133,18 @@ class DockerPytestRunner:
         memory: str = "512m",
         cpus: float = 1.0,
         network: bool = False,
+        env: dict[str, str] | None = None,
+        tmp_size: str = "64m",
+        dockerfile: Path = SANDBOX_DOCKERFILE,
+        build_args: dict[str, str] | None = None,
     ) -> None:
         self.image, self.timeout_s = image, timeout_s
         self.memory, self.cpus, self.network = memory, cpus, network
+        self.env, self.tmp_size = env or {}, tmp_size
+        self.dockerfile, self.build_args = dockerfile, build_args
 
-    def command(self, workspace: Path, name: str) -> list[str]:
+    def command(self, workspace: Path, name: str, tests: list[str] | None = None) -> list[str]:
+        env_flags = [x for k, v in self.env.items() for x in ("-e", f"{k}={v}")]
         return [
             "docker", "run", "--rm", "--name", name,
             "--network", "bridge" if self.network else "none",
@@ -136,23 +153,23 @@ class DockerPytestRunner:
             "--cpus", str(self.cpus),
             "--pids-limit", "256",
             "--read-only",
-            "--tmpfs", "/tmp:rw,size=64m",
+            "--tmpfs", f"/tmp:rw,size={self.tmp_size}",
             "--cap-drop", "ALL",
             "--security-opt", "no-new-privileges",
-            "-e", "HOME=/tmp",
+            "-e", "HOME=/tmp", *env_flags,
             "-v", f"{workspace.resolve()}:/work:ro",
             "-w", "/work",
             self.image,
-            "python", "-m", "pytest", "-q", "-rfE", "-p", "no:cacheprovider",
+            "python", "-m", "pytest", *PYTEST_ARGS, *(tests or []),
         ]  # fmt: skip
 
-    def run(self, workspace: Path) -> TestRun:
-        ensure_sandbox_image(self.image)
+    def run(self, workspace: Path, tests: list[str] | None = None) -> TestRun:
+        ensure_sandbox_image(self.image, self.dockerfile, self.build_args)
         name = f"swe-sandbox-{uuid.uuid4().hex[:12]}"
         start = time.monotonic()
         try:
             proc = subprocess.run(
-                self.command(workspace, name),
+                self.command(workspace, name, tests),
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_s,
