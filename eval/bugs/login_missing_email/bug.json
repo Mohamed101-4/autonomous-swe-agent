@@ -1,0 +1,12 @@
+{
+  "id": "login_missing_email",
+  "issue": "Login crashes when email is missing",
+  "repo": "../../../examples/buggy_app",
+  "reference_edits": [
+    {
+      "path": "app/auth.py",
+      "search": "    email = normalize_email(data[\"email\"])\n",
+      "replace": "    email = data.get(\"email\")\n    if not email:\n        return LoginResult(ok=False, error=\"email is required\")\n    email = normalize_email(email)\n"
+    }
+  ]
+}

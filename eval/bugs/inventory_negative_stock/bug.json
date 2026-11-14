@@ -1,0 +1,11 @@
+{
+  "id": "inventory_negative_stock",
+  "issue": "Removing more items than are in stock makes the stock level negative; it should raise ValueError('insufficient stock') and leave stock unchanged.",
+  "reference_edits": [
+    {
+      "path": "inventory/store.py",
+      "search": "        self._stock[sku] = self._stock.get(sku, 0) - qty",
+      "replace": "        if self._stock.get(sku, 0) < qty:\n            raise ValueError(\"insufficient stock\")\n        self._stock[sku] = self._stock[sku] - qty"
+    }
+  ]
+}

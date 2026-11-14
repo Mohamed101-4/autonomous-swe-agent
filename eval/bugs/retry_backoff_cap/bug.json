@@ -1,0 +1,11 @@
+{
+  "id": "retry_backoff_cap",
+  "issue": "The retry delay keeps doubling past max_delay; with max_delay=30 the 10th retry waits 512 seconds.",
+  "reference_edits": [
+    {
+      "path": "netutil/backoff.py",
+      "search": "    return base * (2**attempt)",
+      "replace": "    return min(base * (2**attempt), max_delay)"
+    }
+  ]
+}

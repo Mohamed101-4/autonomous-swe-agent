@@ -1,0 +1,11 @@
+{
+  "id": "date_range_end",
+  "issue": "date_range(start, end) is documented as inclusive but the returned list is missing the end date.",
+  "reference_edits": [
+    {
+      "path": "calendar_utils/ranges.py",
+      "search": "    return [start + timedelta(days=i) for i in range(days)]",
+      "replace": "    return [start + timedelta(days=i) for i in range(days + 1)]"
+    }
+  ]
+}

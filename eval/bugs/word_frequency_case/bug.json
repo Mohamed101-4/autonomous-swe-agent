@@ -1,0 +1,11 @@
+{
+  "id": "word_frequency_case",
+  "issue": "The word frequency report counts 'The' and 'the' (and 'end.' and 'end') as different words.",
+  "reference_edits": [
+    {
+      "path": "textstats/tokenize.py",
+      "search": "    return text.split()",
+      "replace": "    words = (w.strip(\".,!?;:\\\"()[]\").lower() for w in text.split())\n    return [w for w in words if w]"
+    }
+  ]
+}

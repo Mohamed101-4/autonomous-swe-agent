@@ -1,0 +1,7 @@
+[project]
+name = "pagination-offset"
+version = "0.1.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
