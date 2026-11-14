@@ -48,8 +48,10 @@ def test_include_tests_flag():
     assert "test_login_missing_email" in names
 
 
-@pytest.mark.skipif(
-    importlib.util.find_spec("sentence_transformers") is None, reason="sentence-transformers not installed")
+HAS_ST = importlib.util.find_spec("sentence_transformers") is not None
+
+
+@pytest.mark.skipif(not HAS_ST, reason="sentence-transformers not installed")
 def test_real_sentence_embeddings_find_login():
     retriever = Retriever(index_repo(BUGGY_APP), embedder=default_embedder())
     hits = retriever.search(ISSUE, k=3)
