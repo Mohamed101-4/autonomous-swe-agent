@@ -102,11 +102,11 @@ def run_one(bug: Bug, config: str, *, settings, llm, runner, embedder, workspace
     return result, graded
 
 
-def make_record(bug: Bug, config: str, repeat: int, result, graded, error: str | None) -> dict:
+def make_record(bug_id: str, config: str, repeat: int, result, graded, error: str | None) -> dict:
     usage = (result.llm_usage if result else {}) or {}
     return {
         "config": config,
-        "bug": bug.id,
+        "bug": bug_id,
         "repeat": repeat,
         "agent_verdict": result.status if result else "error",
         "resolved": bool(graded and graded.ok),  # hidden + visible tests pass
@@ -167,7 +167,7 @@ def summary_markdown(summary: dict[str, dict], meta: dict) -> str:
         f"- Date: {meta['date']}  |  git commit: `{meta['git_commit']}`",
         f"- Model: `{meta['model']}` (effort `{meta['effort']}`)  |  sandbox: {meta['sandbox']}",
         f"- Machine: {meta['machine']}",
-        f"- Bugs: {meta['n_bugs']}  |  repeats: {meta['repeats']}",
+        f"- {meta.get('dataset', 'Bugs')}: {meta['n_bugs']}  |  repeats: {meta['repeats']}",
         "",
         "| config | resolved | rate | mean time (s) | mean attempts | validation acc. "
         "| verifier PASS precision | LLM calls | cost (USD) |",

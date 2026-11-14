@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None, llm_factory=None, runner=None, embedder=
                     )  # fmt: skip
                 except Exception as exc:  # keep going; the failure is recorded
                     error = f"{type(exc).__name__}: {exc}"
-                rec = make_record(bug, config, repeat, result, graded, error)
+                rec = make_record(bug.id, config, repeat, result, graded, error)
                 records.append(rec)
                 mark = "RESOLVED" if rec["resolved"] else ("ERROR" if error else "failed")
                 print(f"[{n}/{total}] {config:<17} {bug.id:<26} {mark:<8} "
