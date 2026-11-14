@@ -29,12 +29,12 @@ class Usage:
 class AnthropicLLM:
     """Calls Claude through the official Anthropic SDK."""
 
-    def __init__(self, settings: Settings, max_tokens: int = 16000) -> None:
+    def __init__(self, settings: Settings, max_tokens: int = 16000, client=None) -> None:
         import anthropic
 
         if not settings.has_llm_key:
             raise LLMError("ANTHROPIC_API_KEY is not set. Add it to your .env file.")
-        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        self._client = client or anthropic.Anthropic(api_key=settings.anthropic_api_key)
         self.model = settings.model
         self.effort = settings.effort
         self.max_tokens = max_tokens
