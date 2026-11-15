@@ -47,7 +47,8 @@ def test_eval_harness_with_oracle(tmp_path):
     for config in ("multi_agent", "baseline", "no_retries"):
         s = data["summary"][config]
         assert (s["resolved"], s["runs"], s["validation_accuracy"]) == (2, 2, 1.0)
-    assert data["meta"]["n_bugs"] == 2 and "GB RAM" in data["meta"]["machine"]
+    assert data["meta"]["n_bugs"] == 2
+    assert "RAM" in data["meta"]["machine"]  # "<cpu>, N GB RAM, <os>" on macOS and Linux
     assert "| multi_agent | 2/2 | 100% |" in md
 
 
