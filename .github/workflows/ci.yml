@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --python 3.12
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: swe_agent
+          POSTGRES_PASSWORD: swe_agent
+          POSTGRES_DB: swe_agent_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U swe_agent"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+    env:
+      TEST_DATABASE_URL: postgresql://swe_agent:swe_agent@localhost:5432/swe_agent_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # Core deps only: no PyTorch embeddings, no SWE-bench data (those tests skip).
+      - run: uv sync --python 3.12
+      # Docker is available on GitHub's Ubuntu runners, so the sandbox tests run.
+      - run: uv run pytest -q -rs
