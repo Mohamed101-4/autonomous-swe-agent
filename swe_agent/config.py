@@ -39,7 +39,7 @@ def load_settings(env: dict[str, str] | None = None, use_dotenv: bool = True) ->
         model=env.get("ANTHROPIC_MODEL") or DEFAULT_MODEL,
         effort=env.get("ANTHROPIC_EFFORT") or "medium",
         database_url=env.get("DATABASE_URL") or None,
-        sandbox_image=env.get("SANDBOX_IMAGE") or "python:3.12-slim",
+        sandbox_image=env.get("SANDBOX_IMAGE") or "swe-agent-sandbox:latest",
         sandbox_timeout_seconds=int(env.get("SANDBOX_TIMEOUT_SECONDS") or 120),
         sandbox_memory=env.get("SANDBOX_MEMORY") or "512m",
         sandbox_cpus=float(env.get("SANDBOX_CPUS") or 1.0),
