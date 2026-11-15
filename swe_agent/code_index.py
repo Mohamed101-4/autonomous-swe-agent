@@ -30,7 +30,9 @@ class Symbol:
 
 def _is_test_path(rel: str) -> bool:
     parts = rel.split("/")
-    return any(p in ("tests", "test") for p in parts[:-1]) or parts[-1].startswith("test_")
+    return any(p in ("tests", "test", "testing") for p in parts[:-1]) or parts[-1].startswith(
+        "test_"
+    )
 
 
 def iter_python_files(repo: Path) -> list[Path]:

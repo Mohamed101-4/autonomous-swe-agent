@@ -40,7 +40,7 @@ class Verifier:
                 "log": log,
             }
 
-        run = self.runner.run(Path(state["workspace_path"]))
+        run = self.runner.run(Path(state["workspace_path"]), state.get("test_targets"))
         log.append(
             f"verifier: {run.passed} passed, {run.failed} failed, {run.errors} errors "
             f"in {run.duration_s:.2f}s -> {'PASS' if run.ok else 'FAIL'}"

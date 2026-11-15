@@ -66,7 +66,7 @@ def build_prompt(state: AgentState) -> str:
     parts = [f"Bug report:\n{state['issue']}"]
     if plan.get("hypotheses"):
         parts.append("Planner hypotheses:\n" + "\n".join(f"- {h}" for h in plan["hypotheses"]))
-    parts.append("Relevant code (from the localizer):")
+    parts.append("Relevant code:")
     for c in state.get("candidates", []):
         parts.append(f"--- {c['path']} lines {c['start_line']}-{c['end_line']} ---\n{c['source']}")
     if state.get("feedback"):

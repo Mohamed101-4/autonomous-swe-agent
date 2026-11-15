@@ -1,0 +1,11 @@
+{
+  "id": "cart_discount",
+  "issue": "A 10% discount coupon takes $10 off the cart total instead of 10 percent.",
+  "reference_edits": [
+    {
+      "path": "shop/pricing.py",
+      "search": "    return round(total - percent, 2)",
+      "replace": "    return round(total * (1 - percent / 100), 2)"
+    }
+  ]
+}

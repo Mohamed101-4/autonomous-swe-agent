@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, is_dataclass
 from pathlib import Path
 from typing import Any
 
@@ -43,10 +43,22 @@ class RunResult:
     test_result: dict[str, Any] = field(default_factory=dict)
     log: list[str] = field(default_factory=list)
     workspace: str = ""
+    mode: str = "multi_agent"
+    llm_usage: dict[str, int] = field(default_factory=dict)
 
     @property
     def resolved(self) -> bool:
         return self.status == "resolved"
+
+
+def new_workspace(repo: Path | str, workspace_root: Path | str) -> Path:
+    run_dir = Path(workspace_root) / f"{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    return make_workspace(repo, run_dir / "repo")
+
+
+def llm_usage(llm: LLM) -> dict[str, int]:
+    usage = getattr(llm, "usage", None)
+    return asdict(usage) if is_dataclass(usage) else {}
 
 
 def make_runner(settings: Settings, sandbox: str) -> TestRunner:
@@ -70,6 +82,7 @@ def run_agent(
     embedder: Embedder | None = None,
     options: RunOptions | None = None,
     workspace_root: Path | str = DEFAULT_WORKSPACE_ROOT,
+    test_targets: list[str] | None = None,
 ) -> RunResult:
     settings = settings or load_settings()
     options = options or RunOptions()
@@ -80,8 +93,7 @@ def run_agent(
     max_retries = settings.max_patch_retries if options.max_retries is None else options.max_retries
 
     start = time.monotonic()
-    run_dir = Path(workspace_root) / f"{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
-    workspace = make_workspace(repo, run_dir / "repo")
+    workspace = new_workspace(repo, workspace_root)
 
     graph = build_graph(
         Planner(llm, depth=options.planning_depth),
@@ -96,6 +108,7 @@ def run_agent(
             "repo_path": str(Path(repo).resolve()),
             "workspace_path": str(workspace.resolve()),
             "attempts": 0,
+            "test_targets": test_targets,
             "log": [],
         },
         {"recursion_limit": 50},
@@ -113,4 +126,5 @@ def run_agent(
         test_result=final.get("test_result", {}),
         log=final.get("log", []),
         workspace=str(workspace),
+        llm_usage=llm_usage(llm),
     )
