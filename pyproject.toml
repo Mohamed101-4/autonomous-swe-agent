@@ -1,0 +1,39 @@
+[project]
+name = "autonomous-swe-agent"
+version = "0.1.0"
+description = "Multi-agent (planner, localizer, patcher, verifier) bug-fixing system built with LangGraph"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.70",
+    "langgraph>=0.6",
+    "python-dotenv>=1.0",
+    "psycopg[binary]>=3.2",
+    "numpy>=2.0",
+]
+
+[project.optional-dependencies]
+# Sentence embeddings for retrieval (pulls in PyTorch). Optional so CI stays light;
+# without it, retrieval falls back to AST + keyword search only.
+embeddings = ["sentence-transformers>=3.0"]
+# Loading the SWE-bench Verified dataset from Hugging Face.
+swebench = ["datasets>=3.0"]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# examples/ holds deliberately buggy code whose tests are meant to fail.
+norecursedirs = ["examples", ".venv", ".workspaces"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["examples"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
