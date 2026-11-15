@@ -32,15 +32,31 @@ from swe_agent.pipeline import make_runner  # noqa: E402
 
 
 def machine_info() -> str:
+    """CPU, RAM and OS of the machine running the eval (macOS or Linux)."""
+    system = platform.system()
+    cpu, mem_bytes = platform.processor() or platform.machine(), None
     try:
-        model = subprocess.run(
-            ["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True
-        ).stdout.strip()
-        mem = int(subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True,
-                                 text=True).stdout)  # fmt: skip
-        return f"{model or platform.processor()}, {mem // 2**30} GB RAM, {platform.system()}"
+        if system == "Darwin":
+
+            def sysctl(key):
+                return subprocess.run(["sysctl", "-n", key], capture_output=True,
+                                      text=True).stdout.strip()  # fmt: skip
+
+            cpu = sysctl("machdep.cpu.brand_string") or cpu
+            mem_bytes = int(sysctl("hw.memsize"))
+        elif system == "Linux":
+            for line in Path("/proc/cpuinfo").read_text().splitlines():
+                if line.startswith("model name"):
+                    cpu = line.split(":", 1)[1].strip()
+                    break
+            for line in Path("/proc/meminfo").read_text().splitlines():
+                if line.startswith("MemTotal:"):
+                    mem_bytes = int(line.split()[1]) * 1024
+                    break
     except (OSError, ValueError):
-        return f"{platform.machine()} {platform.system()}"
+        pass
+    mem = f"{round(mem_bytes / 2**30)} GB RAM" if mem_bytes else "RAM unknown"
+    return f"{cpu}, {mem}, {system}"
 
 
 def git_commit() -> str:
