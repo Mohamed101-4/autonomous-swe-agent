@@ -1,7 +1,7 @@
 """Run a repo's pytest suite and parse the results.
 
-LocalPytestRunner runs on the host (used in Phase 2 and unit tests).
-A Docker sandbox runner with the same interface is added in Phase 3.
+LocalPytestRunner runs on the host (fast; used by unit tests and --sandbox local).
+DockerPytestRunner runs the same command in a locked-down container (default).
 """
 
 from __future__ import annotations

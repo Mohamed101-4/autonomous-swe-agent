@@ -83,3 +83,18 @@ def test_cli_records_run_and_shows_history(fake_env, capsys):
     assert main.main(["--history", "1"]) == 0
     line = capsys.readouterr().out
     assert "cli-test" in line and "resolved" in line and "tests=8/8" in line
+
+
+def test_offline_demo_runs_without_key(monkeypatch, capsys):
+    monkeypatch.setattr(main, "load_settings", lambda: load_settings(env={}))
+    code = main.main(["--offline-demo", "--sandbox", "local", "--no-embeddings", "--no-db"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "OFFLINE DEMO" in out and "SCRIPTED" in out
+    assert "RESOLVED after 2 patch attempt(s)" in out
+
+
+def test_offline_demo_rejects_other_repos(monkeypatch, tmp_path):
+    monkeypatch.setattr(main, "load_settings", lambda: load_settings(env={}))
+    with pytest.raises(SystemExit):
+        main.main(["--offline-demo", "--repo", str(tmp_path)])
