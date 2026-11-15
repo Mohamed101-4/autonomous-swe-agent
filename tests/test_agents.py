@@ -1,55 +1,15 @@
 import json
-from pathlib import Path
 
 import pytest
 
 from swe_agent.agents import Localizer, Patcher, Planner, Verifier
 from swe_agent.agents.patcher import PatchError, apply_edits
+from swe_agent.demo import BAD_PATCH, GOOD_PATCH, PLAN_REPLY  # noqa: F401 (re-exported)
+from swe_agent.demo import DEMO_ISSUE as ISSUE
+from swe_agent.demo import DEMO_REPO as BUGGY_APP
 from swe_agent.llm import FakeLLM
 from swe_agent.test_runner import LocalPytestRunner
 from swe_agent.workspace import make_workspace
-
-BUGGY_APP = Path(__file__).resolve().parents[1] / "examples" / "buggy_app"
-ISSUE = "Login crashes when email is missing"
-
-PLAN_REPLY = json.dumps(
-    {
-        "summary": "login() raises when the email field is missing",
-        "hypotheses": ["login indexes data['email'] without checking it exists"],
-        "search_terms": ["login", "email"],
-        "suspect_symbols": ["login"],
-        "steps": ["Read login() in app/auth.py", "Check how email is read"],
-    }
-)
-BAD_PATCH = json.dumps(
-    {
-        "explanation": "Use .get (still crashes on None).",
-        "edits": [
-            {
-                "path": "app/auth.py",
-                "search": 'email = normalize_email(data["email"])',
-                "replace": 'email = normalize_email(data.get("email", ""))',
-            }
-        ],
-    }
-)
-GOOD_PATCH = json.dumps(
-    {
-        "explanation": "Return an error when email is missing or empty.",
-        "edits": [
-            {
-                "path": "app/auth.py",
-                "search": '    email = normalize_email(data["email"])\n',
-                "replace": (
-                    '    email = data.get("email")\n'
-                    "    if not email:\n"
-                    '        return LoginResult(ok=False, error="email is required")\n'
-                    "    email = normalize_email(email)\n"
-                ),
-            }
-        ],
-    }
-)
 
 
 @pytest.fixture

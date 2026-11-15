@@ -3,6 +3,7 @@
 Example:
     python main.py --repo ./examples/buggy_app --issue "Login crashes when email is missing"
     python main.py --history 10
+    python main.py --offline-demo        # no API key: scripted LLM on the sample bug
 """
 
 from __future__ import annotations
@@ -49,7 +50,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--repo-id", help="name stored in the database (default: folder name)")
     p.add_argument("--no-db", action="store_true", help="do not record the run in Postgres")
     p.add_argument("--history", type=int, metavar="N", help="show the last N recorded runs")
+    p.add_argument(
+        "--offline-demo",
+        action="store_true",
+        help="run the real pipeline on examples/buggy_app with a SCRIPTED LLM "
+        "(hand-written replies, no API key); shows the plumbing, not model skill",
+    )
     return p  # fmt: skip
+
+
+_DEMO_LINES = [
+    "OFFLINE DEMO: the LLM is SCRIPTED (hand-written replies), not a model.",
+    "Retrieval, LangGraph, the Docker sandbox, retries and Postgres are real.",
+]
+_W = max(map(len, _DEMO_LINES))
+DEMO_BANNER = "\n".join(
+    ["*" * (_W + 4)] + [f"* {line.ljust(_W)} *" for line in _DEMO_LINES] + ["*" * (_W + 4)]
+)
 
 
 def section(title: str) -> None:
@@ -126,12 +143,21 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.history is not None:
         return show_history(settings.database_url, args.history)
+    llm = None
+    if args.offline_demo:
+        from swe_agent.demo import DEMO_ISSUE, DEMO_REPO, scripted_llm
+
+        if args.repo and args.repo.resolve() != DEMO_REPO:
+            parser.error("--offline-demo only works with examples/buggy_app")
+        args.repo, args.issue = DEMO_REPO, args.issue or DEMO_ISSUE
+        llm = scripted_llm()
+        print(DEMO_BANNER)
     if not args.repo or not args.issue:
         parser.error("--repo and --issue are required")
     if not args.repo.is_dir():
         print(f"error: repo path does not exist: {args.repo}", file=sys.stderr)
         return 2
-    if not settings.has_llm_key:
+    if llm is None and not settings.has_llm_key:
         print("error: ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key.",
               file=sys.stderr)  # fmt: skip
         return 2
@@ -150,12 +176,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"Repo:  {args.repo.resolve()}")
     print(f"Issue: {args.issue}")
-    print(f"Model: {settings.model} | sandbox: {args.sandbox} | planning: {args.planning} | "
+    model = "SCRIPTED (offline demo)" if llm else settings.model
+    print(f"Model: {model} | sandbox: {args.sandbox} | planning: {args.planning} | "
           f"embeddings: {options.use_embeddings} | feedback: {args.feedback}")  # fmt: skip
     print("Running agents...")
 
     try:
-        result = run_agent(args.repo, args.issue, settings=settings, options=options)
+        if llm is not None:
+            result = run_agent(args.repo, args.issue, settings=settings, options=options, llm=llm)
+            result.mode = "demo_scripted"
+        else:
+            result = run_agent(args.repo, args.issue, settings=settings, options=options)
     except Exception as exc:  # report and record any crash instead of a bare traceback
         print(f"error: the run crashed: {type(exc).__name__}: {exc}", file=sys.stderr)
         result = RunResult(
@@ -166,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
             record(settings.database_url, result, args.repo_id, options)
         return 1
     print_report(result)
+    if llm is not None:
+        print("\n(Offline demo: the patches came from a script, not from a model.)")
     if not args.no_db:
         record(settings.database_url, result, args.repo_id, options)
     return 0 if result.resolved else 1
